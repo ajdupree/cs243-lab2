@@ -11,6 +11,64 @@ public class FindRedundantNullChecks {
      * for each function as described on the course webpage
      */
     public static void main(String[] args) {
-        //fill me in
-    }
-}
+	
+    
+		/*
+		Infrastructure wise, we have to go from class name to control flow graphs 
+		ourselves this time. In Lab 1, this was handled for us. We can refer to the 
+		main method in Flow.java for much of this.	
+		*****/
+
+		String solver_name = "submit.MySolver";
+        String analysis_name = "submit.RedundantNullCheck"
+
+        // get an instance of the solver class.
+        Solver solver;
+        try {
+            Object solver_obj = Class.forName(solver_name).newInstance();
+            solver = (Solver) solver_obj;
+        } catch (Exception ex) {
+            System.out.println("ERROR: Could not load class '" + solver_name +
+                "' as Solver: " + ex.toString());
+            System.out.println(usage);
+            return;
+        }
+
+        // get an instance of the analysis class.
+        Analysis analysis;
+        try {
+            Object analysis_obj = Class.forName(analysis_name).newInstance();
+            analysis = (Analysis) analysis_obj;
+        } catch (Exception ex) {
+            System.out.println("ERROR: Could not load class '" + analysis_name +
+                "' as Analysis: " + ex.toString());
+            System.out.println(usage);
+            return;
+        }
+
+        // get the classes we will be visiting.
+        jq_Class[] classes = new jq_Class[args.length - 1]; //first is .this
+        for (int i=0; i < classes.length; i++)
+            classes[i] = (jq_Class)Helper.load(args[i]);
+
+        // register the analysis with the solver.
+        solver.registerAnalysis(analysis);
+
+        // visit each of the specified classes with the solver.
+        for (int i=0; i < classes.length; i++) {
+            System.out.println("Now analyzing " + classes[i].getName());
+            Helper.runPass(classes[i], solver);
+        }
+
+		/*
+		This is where things get trickier. I don't see a definition for this runPass
+		version. How do we extract the methods from within the classes? Then how do
+		we transform these into control flow graphs?
+		*****/
+
+    
+
+
+
+}	
+

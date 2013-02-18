@@ -1,0 +1,1 @@
+JAVAPATHjava -cp PARUNPATH/lib/jwutil.jar:PARUNPATH/lib/javabdd-1.0b2.jar:PARUNPATH/lib/parun.jar:PARUNPATH/lib/joeq.jar $@

@@ -71,6 +71,14 @@ public class FindRedundantNullChecks {
 	
 		End result we need is analysis.getExit(), for each method/cfg analyzed. Then 
 		we'll iterate over those cfgs and remove the indicated quads.
+
+		cfg.getMethod().getName().toString() will get us the method name
+
+		nullChecksSeen data structure added
+		killgen/TF updated
+		current: do meet for intersection
+		then test 
+
 		*****/
 
 		

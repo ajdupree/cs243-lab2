@@ -61,10 +61,20 @@ public class FindRedundantNullChecks {
         }
 
 		/*
-		This is where things get trickier. I don't see a definition for this runPass
-		version. How do we extract the methods from within the classes? Then how do
-		we transform these into control flow graphs?
+		This is where things get trickier. I don't see a definition for runPass which
+		matches this prototype (jq_Class, Solver). How do we extract the methods from
+		within the classes? Then how do we transform these into control flow graphs?
+
+		While I'm sure the last code paragraph would correctly apply our 
+		RedundantNullCheck analysis on each method in each class, we will need to 
+		access the interior cfgs in order to modify them in the next step.
+	
+		End result we need is analysis.getExit(), for each method/cfg analyzed. Then 
+		we'll iterate over those cfgs and remove the indicated quads.
 		*****/
+
+		
+
 
     
 

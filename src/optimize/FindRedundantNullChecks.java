@@ -1,7 +1,11 @@
 package optimize;
 
-import joeq.Class.jq_Class;
 import joeq.Main.Helper;
+import joeq.Class.*;
+import joeq.Compiler.Quad.*;
+import flow.Flow;
+//import joeq.Compiler.Dataflow.Solver;
+
 
 public class FindRedundantNullChecks {
 
@@ -20,7 +24,7 @@ public class FindRedundantNullChecks {
 		*****/
 
 		String solver_name = "submit.MySolver";
-        String analysis_name = "submit.RedundantNullCheck"
+        String analysis_name = "submit.RedundantNullChecks";
 
         // get an instance of the solver class.
         Solver solver;
@@ -81,12 +85,6 @@ public class FindRedundantNullChecks {
 
 		*****/
 
-		
-
-
-    
-
-
-
+		}
 }	
 

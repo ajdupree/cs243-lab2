@@ -97,7 +97,7 @@ public class RedundantNullChecks implements Flow.Analysis {
         {
 			//register null checked before, current null check redundant
 			if(nullChecksSeen.contains(key)){
-				tempSet = new HashSet<Integer>();
+				HashSet<Integer> tempSet = new HashSet<Integer>();
 				tempSet = map.get(key);
 				tempSet.add(id);
 				map.put(key, tempSet);				
@@ -119,13 +119,13 @@ public class RedundantNullChecks implements Flow.Analysis {
         public String toString() { 
             String retval = new String("[");
             String comma = new String("");
-            HashSet<Integer> combinedSet = new HashSet<Integer>();
+            ArrayList<Integer> combinedList = new ArrayList<Integer>();
 
-            for(Map.Entry<String, ArrayList<Integer>> entry : map.entrySet())
-                combinedSet.addAll(entry.getValue());
+            for(Map.Entry<String, HashSet<Integer>> entry : map.entrySet())
+                combinedList.addAll(entry.getValue());
             Collections.sort(combinedList);
 
-            for(Integer cur : combinedSet)
+            for(Integer cur : combinedList)
             {
                 retval = retval + comma + cur.toString();
                 comma = ", ";
@@ -387,9 +387,9 @@ public class RedundantNullChecks implements Flow.Analysis {
 
 			//check! guessing it's the *source* that is the register being checked
 
-            Operand op = Operator.NullCheck.getSrc(q);
+            RegisterOperand op = (Operand.RegisterOperand) Operator.NullCheck.getSrc(q);
             if(op != null) {
-                val.killgen(op.getRegister().toString(), q.getID());
+						val.killgen(op.getRegister().toString(), q.getID());
             } else {
 				System.out.println("Op was null!");
 			}

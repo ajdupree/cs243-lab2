@@ -18,6 +18,13 @@ public class FindRedundantNullChecks {
      * for each function as described on the course webpage
      */
     public static void main(String[] args) {
+
+		if(args.length < 1){
+			System.out.println("please input a class to check");
+			return;
+		}
+
+		System.out.println("doing something" + args.length);
 	    
 		/*
 		Infrastructure wise, we have to go from class name to control flow graphs 
@@ -58,7 +65,7 @@ public class FindRedundantNullChecks {
         }*/
 
         // get the classes we will be visiting.
-        jq_Class[] classes = new jq_Class[args.length - 1]; //first is .this
+        jq_Class[] classes = new jq_Class[args.length]; 
         for (int i=0; i < classes.length; i++)
             classes[i] = (jq_Class)Helper.load(args[i]);
 

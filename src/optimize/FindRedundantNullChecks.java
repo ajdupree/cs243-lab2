@@ -4,6 +4,9 @@ import joeq.Main.Helper;
 import joeq.Class.*;
 import joeq.Compiler.Quad.*;
 import flow.Flow;
+import submit.MySolver;
+import submit.RedundantNullChecks;
+
 //import joeq.Compiler.Dataflow.Solver;
 
 
@@ -15,17 +18,21 @@ public class FindRedundantNullChecks {
      * for each function as described on the course webpage
      */
     public static void main(String[] args) {
-	
-    
+	    
 		/*
 		Infrastructure wise, we have to go from class name to control flow graphs 
 		ourselves this time. In Lab 1, this was handled for us. We can refer to the 
 		main method in Flow.java for much of this.	
 		*****/
 
+		MySolver solver = new MySolver();
+		RedundantNullChecks analysis = new RedundantNullChecks();
+
+		/*
 		String solver_name = "submit.MySolver";
         String analysis_name = "submit.RedundantNullChecks";
-
+		
+		
         // get an instance of the solver class.
         Solver solver;
         try {
@@ -48,7 +55,7 @@ public class FindRedundantNullChecks {
                 "' as Analysis: " + ex.toString());
             System.out.println(usage);
             return;
-        }
+        }*/
 
         // get the classes we will be visiting.
         jq_Class[] classes = new jq_Class[args.length - 1]; //first is .this

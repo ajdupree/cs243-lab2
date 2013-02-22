@@ -6,6 +6,7 @@ import joeq.Main.Helper;
 import flow.Flow;
 import submit.MySolver;
 import submit.RedundantNullChecks;
+import submit.RedundantNullCheckRemover;
 
 public class Optimize {
     /*
@@ -18,10 +19,11 @@ public class Optimize {
             // Run your optimization on each classes.
             MySolver solver = new MySolver();
             RedundantNullChecks analysis = new RedundantNullChecks();
-            RedundantNUllCheckRemover optimizer = new RedundantNullCheckRemover();
+            RedundantNullCheckRemover optimizer = new RedundantNullCheckRemover();
             optimizer.registerRedundantNullChecks(analysis);
             analysis.suppressPrints();
             solver.registerAnalysis(analysis);
+            solver.registerOptimization(optimizer);
             Helper.runPass(classes, solver);
         }
     }

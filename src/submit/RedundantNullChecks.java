@@ -407,16 +407,3 @@ public class RedundantNullChecks implements Flow.Analysis {
     }
 }
 
-public class RedundantNullCheckRemover implements Flow.Optimization{
-    @Override
-    public void optimize(ControlFlowGraph cfg)
-    {
-        System.out.println("Hello, World!");
-    }
-
-    RedundantNullChecks nullChecker;
-    public void registerRedundantNullChecks(RedundantNullChecks in)
-    {
-        nullChecker = in;
-    }
-}

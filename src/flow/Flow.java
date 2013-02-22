@@ -20,7 +20,7 @@ public abstract class Flow {
     }
 
     public static interface Optimization {
-        public void optimize();
+        public void optimize(ControlFlowGraph cfg);
     }
 
     public static interface Analysis {

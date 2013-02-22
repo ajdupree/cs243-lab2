@@ -210,6 +210,6 @@ public class MySolver implements Flow.Solver {
         analysis.postprocess(cfg);
 
         // run optimizer -- class that removes redundant null checks
-        optimization.optimize(cfg);
+        if(optimization != null) optimization.optimize(cfg);
     }
 }

@@ -19,6 +19,10 @@ public abstract class Flow {
          */
     }
 
+    public static interface Optimization {
+        public void optimize();
+    }
+
     public static interface Analysis {
 
         /* Analysis-specific customization.  You can use these to

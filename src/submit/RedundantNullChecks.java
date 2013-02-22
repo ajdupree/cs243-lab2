@@ -12,36 +12,42 @@ import flow.Flow;
  * using the Flow.Analysis interface.
  */
 public class RedundantNullChecks implements Flow.Analysis {
-	
+ 
+    ArrayList<Integer> redundantChecks;
+
+    public ArrayList<Integer> getRedundantChecks()
+    {
+        return (ArrayList<Integer>) redundantChecks.clone();
+    }
+
+    public void suppressPrints() 
+    {
+        suppress = true;
+    }
+
+    private boolean suppress = false;
 
     /**
      * Class for the dataflow objects in the ReachingDefs analysis.
      * You are free to change this class or move it to another file.
      */
-    public static class DefinitionTable implements Flow.DataflowObject {
-		//list of redundant null checks
-		private SortedMap<String, HashSet<Integer>> map;
-
+    public static class SafeSet implements Flow.DataflowObject {
 		//null checks seen
-		private Set<String> nullChecksSeen = new HashSet<String>(); 
-		
-		//initialized to all the variables (registers) in the method
-		private static Set<String> core = new HashSet<String>();
-		public static void reset() { core.clear(); }
-		
-		public static void register(String key) {
-			core.add(key);
-		}
-		
-		//initialized with all registers associated with an empty list of quads
-		//aka no redundant null checks seen
-		public DefinitionTable() {
-			map = new TreeMap<String, HashSet<Integer>>();
-			for(String key : core) {
-				map.put(key, new HashSet<Integer>());
-			}
-			nullChecksSeen.clear(); //AJD
-		}
+		private Set<String> SafeVars = new TreeSet<String>();
+        static private TreeSet<String> TopSet = new TreeSet<String>();
+
+        public SafeSet() {
+            
+        }
+
+        public boolean contains(String in) {
+            return SafeVars.contains(in);
+        }
+
+        static public void register(String in)
+        {
+            TopSet.add(in);
+        }
 
         /**
          * Methods from the Flow.DataflowObject interface.
@@ -49,9 +55,7 @@ public class RedundantNullChecks implements Flow.Analysis {
          * These need to be filled in.
          */
         public void setToTop() {
-            for(HashSet<Integer> set : map.values()) {
-                set.clear();
-            }
+            SafeVars = (TreeSet<String>)TopSet.clone();
         }
         
         // do we need this?
@@ -60,50 +64,24 @@ public class RedundantNullChecks implements Flow.Analysis {
         /*The intersection. I suppose at this point we just need to intersect the list of 
 		observed null checks*/
 		public void meetWith (Flow.DataflowObject o) {
-            ArrayList<Integer> lhsTempList;
-	        DefinitionTable rhs = (DefinitionTable) o;
+	        SafeSet rhs = (SafeSet) o;
 
-			this.nullChecksSeen.retainAll(rhs.nullChecksSeen);
-
-            /*for(Map.Entry<String, ArrayList<Integer>> rhsMapEntry : rhs.map.entrySet()) {
-                lhsTempList = map.get(rhsMapEntry.getKey());
-                for(Integer rhsListEntry : rhsMapEntry.getValue()) {
-                    if(!presentInList(lhsTempList, rhsListEntry))
-                        lhsTempList.add(rhsListEntry);    
-                }
-                map.put(rhsMapEntry.getKey(), lhsTempList);
-            }*/
+			this.SafeVars.retainAll(rhs.SafeVars);
         }
-
-        /*private boolean presentInList(ArrayList<Integer> list, Integer val) {
-            for(Integer cur : list) 
-                if(cur.equals(val)) return true;
-            return false;
-        }*/
 
         public void copy (Flow.DataflowObject o) {
-            DefinitionTable rhs = (DefinitionTable) o;
-            map.clear();
-            for(Map.Entry<String, HashSet<Integer>> rhsMapEntry : rhs.map.entrySet()) {
-                map.put(rhsMapEntry.getKey(), rhsMapEntry.getValue());
-            }
+	        SafeSet rhs = (SafeSet) o;
+            SafeVars = (TreeSet<String>) ((TreeSet<String>)rhs.SafeVars).clone();
         }
 
-		/*Implement the transfer function. 
-		If the register in question is NOT in the current DFO's NullChecksSeen list,
-		add it to RedundantNullChecks aka the map. 
-		Afterwards, add register to the NullChecksSeen set.*/
-        public void killgen(String key, Integer id)
+        public void gen(String gened)
         {
-			//register null checked before, current null check redundant
-			if(nullChecksSeen.contains(key)){
-				HashSet<Integer> tempSet = new HashSet<Integer>();
-				tempSet = map.get(key);
-				tempSet.add(id);
-				map.put(key, tempSet);				
-			}
-			//always add the null check to the seen list (it's a set, so duplicates impossible)
-			nullChecksSeen.add(key);
+            SafeVars.add(gened);
+        }
+
+        public void def(String defed)
+        {
+            SafeVars.remove(defed);
         }
 
         /**
@@ -119,15 +97,10 @@ public class RedundantNullChecks implements Flow.Analysis {
         public String toString() { 
             String retval = new String("[");
             String comma = new String("");
-            ArrayList<Integer> combinedList = new ArrayList<Integer>();
 
-            for(Map.Entry<String, HashSet<Integer>> entry : map.entrySet())
-                combinedList.addAll(entry.getValue());
-            Collections.sort(combinedList);
-
-            for(Integer cur : combinedList)
+            for(String cur : SafeVars)
             {
-                retval = retval + comma + cur.toString();
+                retval = retval + comma + cur;
                 comma = ", ";
             }
 
@@ -136,8 +109,8 @@ public class RedundantNullChecks implements Flow.Analysis {
 
         @Override
         public boolean equals(Object o) {
-            if(o instanceof DefinitionTable) {
-                return map.equals(((DefinitionTable)o).map);
+            if(o instanceof SafeSet) {
+                return SafeVars.equals(((SafeSet)o).SafeVars);
             }
             return false;
         }
@@ -151,8 +124,8 @@ public class RedundantNullChecks implements Flow.Analysis {
      * You are free to modify these fields, just make sure to
      * preserve the data printed by postprocess(), which relies on these.
      */
-    private DefinitionTable[] in, out;
-    private DefinitionTable entry, exit;
+    private SafeSet[] in, out;
+    private SafeSet entry, exit;
 
     /**
      * This method initializes the datflow framework.
@@ -161,7 +134,9 @@ public class RedundantNullChecks implements Flow.Analysis {
      */
     public void preprocess(ControlFlowGraph cfg) {
         // this line must come first.
-        System.out.println("Method: "+cfg.getMethod().getName().toString());
+        if(!suppress) System.out.print(cfg.getMethod().getName().toString());
+
+        redundantChecks = new ArrayList<Integer>(); 
 
         // get the amount of space we need to allocate for the in/out arrays.
         QuadIterator qit = new QuadIterator(cfg);
@@ -174,47 +149,55 @@ public class RedundantNullChecks implements Flow.Analysis {
         max += 1;
 
         // allocate the in and out arrays.
-        in = new DefinitionTable[max];
-        out = new DefinitionTable[max];
+        in = new SafeSet[max];
+        out = new SafeSet[max];
         qit = new QuadIterator(cfg);
-
-        DefinitionTable.reset();
 
         /************************************************
          * Your remaining initialization code goes here *
          ************************************************/
-        
+
         int numargs = cfg.getMethod().getParamTypes().length;
 
         for(int i = 0; i < numargs; i++)
         {
-            DefinitionTable.register("R" + i);
+            SafeSet.register("R" + i);
         }
-        
-        while (qit.hasNext()) {
+
+        while(qit.hasNext()) {
             Quad q = qit.next();
-            for (RegisterOperand def : q.getDefinedRegisters()) {
-                DefinitionTable.register(def.getRegister().toString());
+            for(RegisterOperand def : q.getDefinedRegisters()) {
+                SafeSet.register(def.getRegister().toString());
             }
-            for (RegisterOperand use : q.getUsedRegisters()) {
-                DefinitionTable.register(use.getRegister().toString());
+            for(RegisterOperand use : q.getUsedRegisters()) {
+                SafeSet.register(use.getRegister().toString());
             }
         }
         
-        // initialize DefinitionTable in transfer function object
-        transferFunction.val = new DefinitionTable();
+        // initialize SafeSet in transfer function object
+        transferFunction.val = new SafeSet();
 
         // initialize the entry and exit points.
-        entry = new DefinitionTable();
-        exit = new DefinitionTable();
+        entry = new SafeSet();
+        exit = new SafeSet();
         // initialize the contents of in and out.
         qit = new QuadIterator(cfg);
         while (qit.hasNext()) {
             int id = qit.next().getID();
-            in[id] = new DefinitionTable();
-            out[id] = new DefinitionTable();
+            in[id] = new SafeSet();
+            out[id] = new SafeSet();
         }
 
+    }
+
+    private String redundantChecksToString()
+    {
+        String retval = "";
+        for(Integer cur : redundantChecks)
+        {
+            retval = retval + " " + cur.toString();
+        }
+        return retval;
     }
 
     /**
@@ -227,14 +210,30 @@ public class RedundantNullChecks implements Flow.Analysis {
      * @param cfg  Unused.
      */
     public void postprocess (ControlFlowGraph cfg) {
-        System.out.println("entry: " + entry.toString());
-        for (int i=0; i<in.length; i++) {
-            if (in[i] != null) {
-                System.out.println(i + " in:  " + in[i].toString());
-                System.out.println(i + " out: " + out[i].toString());
+        QuadIterator qit = new QuadIterator(cfg);
+
+        while(qit.hasNext()) {
+            Quad q = qit.next();
+            if(q.getOperator() instanceof Operator.NullCheck)
+            {
+                if(in[q.getID()].contains(Operator.getReg2(q).toString().split(" ")[0].substring(1))) {
+                    redundantChecks.add(q.getID());
+                }
             }
         }
-        System.out.println("exit: " + exit.toString());
+        
+        Collections.sort(redundantChecks);
+
+        if(!suppress) System.out.println(redundantChecksToString());
+
+//      System.out.println("entry: " + entry.toString());
+//      for (int i=0; i<in.length; i++) {
+//          if (in[i] != null) {
+//              System.out.println(i + " in:  " + in[i].toString());
+//              System.out.println(i + " out: " + out[i].toString());
+//          }
+//      }
+//      System.out.println("exit: " + exit.toString());
     }
 
     /**
@@ -245,23 +244,23 @@ public class RedundantNullChecks implements Flow.Analysis {
     public boolean isForward () { return true; }
     
     public Flow.DataflowObject getEntry() {
-        DefinitionTable result = new DefinitionTable();
+        SafeSet result = new SafeSet();
         result.copy(entry);
         return result; 
     }
     
     public Flow.DataflowObject getExit() {
-        DefinitionTable result = new DefinitionTable();
+        SafeSet result = new SafeSet();
         result.copy(exit);
         return result; 
     }
 
     public void setEntry(Flow.DataflowObject value) {
-        entry = (DefinitionTable)value;
+        entry = (SafeSet)value;
     }
     
     public void setExit(Flow.DataflowObject value) {
-        exit = (DefinitionTable)value;
+        exit = (SafeSet)value;
     }
 
     public Flow.DataflowObject getIn(Quad q) { 
@@ -285,7 +284,7 @@ public class RedundantNullChecks implements Flow.Analysis {
     }
     
     public Flow.DataflowObject newTempVar() { 
-        return new DefinitionTable(); 
+        return new SafeSet(); 
     }
 
     public void processQuad(Quad q) {
@@ -298,65 +297,65 @@ public class RedundantNullChecks implements Flow.Analysis {
 
     public static class TransferFunction extends QuadVisitor.EmptyVisitor
     {
-        DefinitionTable val;
+        SafeSet val;
 
         @Override 
         public void visitMove(Quad q)
         {
-            //val.killgen(Operator.Move.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.Move.getDest(q).getRegister().toString());
         }
 
         @Override
         public void visitBinary(Quad q)
         {
-            //val.killgen(Operator.Binary.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.Binary.getDest(q).getRegister().toString());
         }
 
         @Override
         public void visitUnary(Quad q)
         {
-            //val.killgen(Operator.Unary.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.Unary.getDest(q).getRegister().toString());
         }
 
         @Override
         public void visitALoad(Quad q)
         {
-            //val.killgen(Operator.ALoad.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.ALoad.getDest(q).getRegister().toString());
         }
         
         @Override
         public void visitALength(Quad q)
         {
-            //val.killgen(Operator.ALength.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.ALength.getDest(q).getRegister().toString());
         }
         
         @Override
         public void visitGetstatic(Quad q)
         {
-            //val.killgen(Operator.Getstatic.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.Getstatic.getDest(q).getRegister().toString());
         }
         
         @Override
         public void visitGetfield(Quad q)
         {
-            //val.killgen(Operator.Getfield.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.Getfield.getDest(q).getRegister().toString());
         }
         @Override
         public void visitInstanceOf(Quad q)
         {
-            //val.killgen(Operator.InstanceOf.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.InstanceOf.getDest(q).getRegister().toString());
         }
         
         @Override
         public void visitNew(Quad q)
         {
-            //val.killgen(Operator.New.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.New.getDest(q).getRegister().toString());
         }
         
         @Override
         public void visitNewArray(Quad q)
         {
-            //val.killgen(Operator.NewArray.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.NewArray.getDest(q).getRegister().toString());
         }
         
         @Override
@@ -364,32 +363,32 @@ public class RedundantNullChecks implements Flow.Analysis {
         {
             RegisterOperand op = Operator.Invoke.getDest(q);
             if(op != null) {
-                //val.killgen(op.getRegister().toString(), q.getID());
+                val.def(op.getRegister().toString());
             }
         }
         
         @Override
         public void visitJsr(Quad q)
         {
-            //val.killgen(Operator.Jsr.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.Jsr.getDest(q).getRegister().toString());
         }
         
         @Override
         public void visitCheckCast(Quad q)
         {
-            //val.killgen(Operator.CheckCast.getDest(q).getRegister().toString(), q.getID());
+            val.def(Operator.CheckCast.getDest(q).getRegister().toString());
         }
 
         @Override
         public void visitNullCheck(Quad q)
         {
-            //val.killgen("T-1", q.getID());
+            val.def("T-1");
 
 			//check! guessing it's the *source* that is the register being checked
 
-            RegisterOperand op = (Operand.RegisterOperand) Operator.NullCheck.getSrc(q);
+            Operand op = (Operand.RegisterOperand) Operator.NullCheck.getSrc(q);
             if(op != null) {
-						val.killgen(op.getRegister().toString(), q.getID());
+				val.gen(Operator.getReg2(q).toString().split(" ")[0].substring(1));
             } else {
 				System.out.println("Op was null!");
 			}
@@ -398,12 +397,26 @@ public class RedundantNullChecks implements Flow.Analysis {
         @Override
         public void visitZeroCheck(Quad q)
         {
-            //val.killgen("T-1", q.getID());
+            val.def("T-1");
             /*Operand op = Operator.ZeroCheck.getDest(q);
             if(op != null) {
-                //val.killgen(op.getRegister().toString(), q.getID());
+                val.def(op.getRegister().toString());
             }*/
         }
         
+    }
+}
+
+public class RedundantNullCheckRemover implements Flow.Optimization{
+    @Override
+    public void optimize(ControlFlowGraph cfg)
+    {
+        System.out.println("Hello, World!");
+    }
+
+    RedundantNullChecks nullChecker;
+    public void registerRedundantNullChecks(RedundantNullChecks in)
+    {
+        nullChecker = in;
     }
 }

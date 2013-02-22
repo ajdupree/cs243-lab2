@@ -23,8 +23,6 @@ public class FindRedundantNullChecks {
 			System.out.println("please input a class to check");
 			return;
 		}
-
-		System.out.println("doing something" + args.length);
 	    
 		/*
 		Infrastructure wise, we have to go from class name to control flow graphs 
@@ -34,35 +32,6 @@ public class FindRedundantNullChecks {
 
 		MySolver solver = new MySolver();
 		RedundantNullChecks analysis = new RedundantNullChecks();
-
-		/*
-		String solver_name = "submit.MySolver";
-        String analysis_name = "submit.RedundantNullChecks";
-		
-		
-        // get an instance of the solver class.
-        Solver solver;
-        try {
-            Object solver_obj = Class.forName(solver_name).newInstance();
-            solver = (Solver) solver_obj;
-        } catch (Exception ex) {
-            System.out.println("ERROR: Could not load class '" + solver_name +
-                "' as Solver: " + ex.toString());
-            System.out.println(usage);
-            return;
-        }
-
-        // get an instance of the analysis class.
-        Analysis analysis;
-        try {
-            Object analysis_obj = Class.forName(analysis_name).newInstance();
-            analysis = (Analysis) analysis_obj;
-        } catch (Exception ex) {
-            System.out.println("ERROR: Could not load class '" + analysis_name +
-                "' as Analysis: " + ex.toString());
-            System.out.println(usage);
-            return;
-        }*/
 
         // get the classes we will be visiting.
         jq_Class[] classes = new jq_Class[args.length]; 
@@ -74,7 +43,7 @@ public class FindRedundantNullChecks {
 
         // visit each of the specified classes with the solver.
         for (int i=0; i < classes.length; i++) {
-            System.out.println("Now analyzing " + classes[i].getName());
+            //System.out.println("Now analyzing " + classes[i].getName());
             Helper.runPass(classes[i], solver);
         }
 

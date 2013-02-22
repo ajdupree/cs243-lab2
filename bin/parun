@@ -1,0 +1,1 @@
+java -cp /home/tony/classes/cs243/lab2/lib/jwutil.jar:/home/tony/classes/cs243/lab2/lib/javabdd-1.0b2.jar:/home/tony/classes/cs243/lab2/lib/parun.jar:/home/tony/classes/cs243/lab2/lib/joeq.jar $@
